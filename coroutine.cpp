@@ -37,9 +37,11 @@ static void Yield( Coroutine * c ) {
 }
 
 static void f( Coroutine * c ) {
-	printf( "yielding once\n" );
+	float a = 1.0f;
+	printf( "yielding once, a = %f\n", a );
 	Yield( c );
-	printf( "yielding twice\n" );
+	a += 1.0f;
+	printf( "yielding twice, a = %f\n", a );
 }
 
 int main() {
