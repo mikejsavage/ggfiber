@@ -17,14 +17,14 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	*fiber = {
 		.rip = ( void * ) FiberWrapper,
 		// TODO: not sure this is completely right but it does give us ba5ed in bt
-		.rsp = char_stack + stack_size - sizeof( void * ),
-		.rbp = char_stack + stack_size - sizeof( void * ),
+		.rsp = char_stack + stack_size - 2 * sizeof( void * ),
+		.rbp = char_stack + stack_size - 2 * sizeof( void * ),
 		.r12 = ( void * ) callback,
 		.r13 = ( void * ) callback_arg,
 	};
 
 	uintptr_t based = 0xba5ed0dead0ba5ed;
-	memcpy( char_stack + stack_size - sizeof( void * ), &based, sizeof( based ) );
+	memcpy( char_stack + stack_size - 2 * sizeof( void * ), &based, sizeof( based ) );
 }
 
 void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
