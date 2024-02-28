@@ -37,27 +37,27 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	// save current context to `from`
 	asm volatile(
 		"leaq 1f(%%rip), %%rax\n"
-		"movq %%rax,  0(%0)\n"
-		"movq %%rsp,  8(%0)\n"
-		"movq %%rbp, 16(%0)\n"
-		"movq %%rbx, 24(%0)\n"
-		"movq %%r12, 32(%0)\n"
-		"movq %%r13, 40(%0)\n"
-		"movq %%r14, 48(%0)\n"
-		"movq %%r15, 56(%0)\n"
+		"movq %%rax, (0 * 8)(%0)\n"
+		"movq %%rsp, (1 * 8)(%0)\n"
+		"movq %%rbp, (2 * 8)(%0)\n"
+		"movq %%rbx, (3 * 8)(%0)\n"
+		"movq %%r12, (4 * 8)(%0)\n"
+		"movq %%r13, (5 * 8)(%0)\n"
+		"movq %%r14, (6 * 8)(%0)\n"
+		"movq %%r15, (7 * 8)(%0)\n"
 		: "=D"( from ) : : "rax"
 	);
 
 	// load context from `to`
 	asm volatile(
-		"movq 56(%0), %%r15\n"
-		"movq 48(%0), %%r14\n"
-		"movq 40(%0), %%r13\n"
-		"movq 32(%0), %%r12\n"
-		"movq 24(%0), %%rbx\n"
-		"movq 16(%0), %%rbp\n"
-		"movq  8(%0), %%rsp\n"
-		"jmpq  *(%0)\n"
+		"movq (7 * 8)(%0), %%r15\n"
+		"movq (6 * 8)(%0), %%r14\n"
+		"movq (5 * 8)(%0), %%r13\n"
+		"movq (4 * 8)(%0), %%r12\n"
+		"movq (3 * 8)(%0), %%rbx\n"
+		"movq (2 * 8)(%0), %%rbp\n"
+		"movq (1 * 8)(%0), %%rsp\n"
+		"jmpq *(%0)\n"
 		: : "S"( to )
 	);
 
