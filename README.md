@@ -11,7 +11,9 @@ The API in its entirety is:
 ```cpp
 struct VolatileRegisters { /* doesn't matter */ };
 using FiberCallback = void ( * )( void * );
-void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size );
+void MakeFiberContext( VolatileRegisters * fiber,
+	FiberCallback callback, void * callback_arg,
+	void * stack, size_t stack_size );
 void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to );
 ```
 
@@ -35,7 +37,8 @@ static void f( void * bye ) {
 
 int main() {
 	VolatileRegisters bye, hello;
-	alignas( 16 ) char stack[ 8 * 1024 ]; // printf needs a surprising amount of stack space
+	// printf needs a surprising amount of stack space
+	alignas( 16 ) char stack[ 8 * 1024 ];
 	MakeFiberContext( &hello, f, &bye, stack, sizeof( stack ) );
 	SwitchContext( &bye, &hello );
 	printf( "bye\n" );
