@@ -12,6 +12,7 @@
 [[gnu::noreturn]] static void FiberWrapper() {
 	asm volatile( "movq %%r13, %%rdi" : : : "rdi" );
 	asm volatile( "jmpq *%%r12" : );
+	__builtin_unreachable();
 }
 
 void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
