@@ -22,15 +22,15 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 
 	*fiber = {
 		.rip = ( void * ) FiberWrapper,
-		// TODO: not sure this is completely right but it does give us ba5ed in bt
+		// TODO: not sure this is completely right but it does give us iced in bt
 		.rsp = char_stack + stack_size - 2 * sizeof( void * ),
 		.rbp = char_stack + stack_size - 2 * sizeof( void * ),
 		.r12 = ( void * ) callback,
 		.r13 = ( void * ) callback_arg,
 	};
 
-	uintptr_t based = 0xba5ed2ed61113d;
-	memcpy( char_stack + stack_size - 2 * sizeof( void * ), &based, sizeof( based ) );
+	uintptr_t iced = 0x1ced;
+	memcpy( char_stack + stack_size - 2 * sizeof( void * ), &iced, sizeof( iced ) );
 }
 
 void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
@@ -87,7 +87,7 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	*fiber = {
 		.x19 = ( void * ) callback,
 		.x20 = callback_arg,
-		.x21 = ( void * ) 0xba5ed,
+		.x21 = ( void * ) 0x1ced,
 		.sp = ( char * ) stack + stack_size,
 		.pc = ( void * ) FiberWrapper,
 	};
