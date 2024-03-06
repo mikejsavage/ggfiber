@@ -22,15 +22,14 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 
 	*fiber = {
 		.rip = ( void * ) FiberWrapper,
-		// TODO: not sure this is completely right but it does give us iced in bt
-		.rsp = char_stack + stack_size - 2 * sizeof( void * ),
-		.rbp = char_stack + stack_size - 2 * sizeof( void * ),
+		.rsp = char_stack + stack_size - sizeof( void * ),
+		.rbp = char_stack + stack_size - sizeof( void * ),
 		.r12 = ( void * ) callback,
 		.r13 = ( void * ) callback_arg,
 	};
 
 	uintptr_t iced = 0x1ced;
-	memcpy( char_stack + stack_size - 2 * sizeof( void * ), &iced, sizeof( iced ) );
+	memcpy( fiber->rsp, &iced, sizeof( iced ) );
 }
 
 void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
