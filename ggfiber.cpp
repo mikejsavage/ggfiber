@@ -5,6 +5,8 @@
 
 #include "ggfiber.h"
 
+static_assert( sizeof( void * ) == 8, "64bit only" );
+
 #if GGFIBER_ARCHITECTURE_X86
 
 // TODO: windows specific stuff
