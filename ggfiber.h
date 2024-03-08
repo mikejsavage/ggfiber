@@ -30,7 +30,16 @@ struct VolatileRegisters {
 		alignas( 16 ) char value[ 16 ];
 	};
 
+	Register rdi, rsi;
 	XMMRegister xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15;
+
+	// https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+	struct {
+		void * stack_base;
+		void * stack_top;
+		void * stack_dealloc;
+		void * fiber_data;
+	} tib;
 #endif
 };
 #endif

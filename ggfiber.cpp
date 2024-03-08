@@ -9,7 +9,43 @@ static_assert( sizeof( void * ) == 8, "64bit only" );
 
 #if GGFIBER_ARCHITECTURE_X86
 
-// TODO: windows specific stuff
+#if GGFIBER_PLATFORM_WINDOWS
+
+namespace {
+extern "C" void FiberWrapper();
+extern "C" void SwitchContextWindows( VolatileRegisters * from, const VolatileRegisters * to );
+}
+
+void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
+	SwitchContextWindows( from, to );
+}
+
+void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
+	constexpr size_t kShadowStackSize = 32;
+
+	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
+	assert( stack_size >= kShadowStackSize + sizeof( void * ) );
+	char * char_stack = ( char * ) stack;
+
+	*fiber = {
+		.rip = ( void * ) FiberWrapper,
+		// NOTE: Windows expects the stack to be aligned before `call`, which pushes a return
+		// address, so when switching into a fiber we need to misalign the stack by 8
+		.rsp = char_stack + stack_size - kShadowStackSize - sizeof( void * ),
+		.r12 = ( void * ) callback,
+		.r13 = ( void * ) callback_arg,
+		.tib = {
+			.stack_base = char_stack + stack_size,
+			.stack_top = stack,
+			.stack_dealloc = stack,
+		},
+	};
+
+	uintptr_t iced = 0x1ced;
+	memcpy( fiber->rsp, &iced, sizeof( iced ) );
+}
+
+#else // !GGFIBER_PLATFORM_WINDOWS
 
 [[gnu::noreturn]] static void FiberWrapper() {
 	asm volatile( "movq %%r13, %%rdi" : : : "rdi" );
@@ -71,6 +107,8 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 		: : : "rax", "rcx", "rdx", "rdi", "r8", "r9", "r10", "r11", "memory", "cc"
 	);
 }
+
+#endif // !GGFIBER_PLATFORM_WINDOWS
 
 #endif // GGFIBER_ARCHITECTURE_X86
 
