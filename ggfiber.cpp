@@ -16,7 +16,7 @@
 }
 
 void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
-	assert( uintptr_t( stack ) % 16 == 0 );
+	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
 	assert( stack_size >= sizeof( void * ) );
 	char * char_stack = ( char * ) stack;
 
@@ -82,7 +82,7 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 }
 
 void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
-	assert( uintptr_t( stack ) % 16 == 0 );
+	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
 	*fiber = {
 		.x19 = ( void * ) callback,
 		.x20 = callback_arg,
