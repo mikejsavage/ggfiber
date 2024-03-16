@@ -20,13 +20,13 @@ static_assert( sizeof( void * ) == 8, "64bit only" );
 #  define INLINE_X64 [[gnu::section( ".text" )]]
 #endif
 
-INLINE_X64 static alignas( 16 ) const uint8_t FiberWrapperX64[] = {
+alignas( 16 ) INLINE_X64 static const uint8_t FiberWrapperX64[] = {
 	0x4c, 0x89, 0xe9, // mov rcx, r13
 	0x41, 0xff, 0xe4, // jmp r12
 	0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, // int3
 };
 
-INLINE_X64 static alignas( 16 ) const uint8_t SwitchContextX64[] = {
+alignas( 16 ) INLINE_X64 static const uint8_t SwitchContextX64[] = {
 	0x48, 0x8d, 0x05, 0x3e, 0x01, 0x00, 0x00,             // lea rax, [.yield_target]
 	0x48, 0x89, 0x01,                                     // mov [rcx + 0 * 8], rax
 	0x48, 0x89, 0x61, 0x08,                               // mov [rcx + 1 * 8], rsp

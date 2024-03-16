@@ -7,7 +7,7 @@ struct Coroutine;
 using CoroutineCallback = void ( * )( Coroutine * c );
 
 struct Coroutine {
-	static constexpr size_t STACK_SIZE = 1024 * 8;
+	static constexpr size_t STACK_SIZE = 1024 * 16;
 	alignas( 16 ) char stack[ STACK_SIZE ];
 
 	CoroutineCallback callback;
