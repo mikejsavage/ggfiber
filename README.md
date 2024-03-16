@@ -9,8 +9,9 @@ stack memory buffers that you manage yourself.
 The API in its entirety is:
 
 ```cpp
-struct VolatileRegisters { /* doesn't matter */ };
 using FiberCallback = void ( * )( void * );
+struct VolatileRegisters;
+
 void MakeFiberContext( VolatileRegisters * fiber,
 	FiberCallback callback, void * callback_arg,
 	void * stack, size_t stack_size );

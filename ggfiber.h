@@ -1,5 +1,15 @@
 #pragma once
 
+#include <stddef.h>
+
+// API
+using FiberCallback = void ( * )( void * );
+struct VolatileRegisters;
+
+void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size );
+void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to );
+
+// implementation details
 #if defined( _WIN32 )
 #  define GGFIBER_PLATFORM_WINDOWS 1
 #elif defined( __APPLE__ )
@@ -17,8 +27,6 @@
 #else
 #  error unsupported architecture
 #endif
-
-#include <stddef.h>
 
 #if GGFIBER_ARCHITECTURE_X86
 struct VolatileRegisters {
@@ -52,9 +60,3 @@ struct VolatileRegisters {
 	Register sp, pc;
 };
 #endif
-
-using FiberCallback = void ( * )( void * );
-
-void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size );
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to );
-
