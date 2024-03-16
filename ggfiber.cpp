@@ -7,18 +7,87 @@
 
 static_assert( sizeof( void * ) == 8, "64bit only" );
 
-#if GGFIBER_ARCHITECTURE_X86
+/*
+ * x64 Windows
+ */
 
-#if GGFIBER_PLATFORM_WINDOWS
+#if GGFIBER_ARCHITECTURE_X86 && GGFIBER_PLATFORM_WINDOWS
 
-namespace {
-extern "C" void FiberWrapper();
-extern "C" void SwitchContextWindows( VolatileRegisters * from, const VolatileRegisters * to );
-}
+#if defined( _MSC_VER )
+#  pragma section( ".text" )
+#  define INLINE_X64 __declspec( allocate( ".text" ) )
+#else
+#  define INLINE_X64 [[gnu::section( ".text" )]]
+#endif
 
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
-	SwitchContextWindows( from, to );
-}
+INLINE_X64 static alignas( 16 ) const uint8_t FiberWrapperX64[] = {
+	0x4c, 0x89, 0xe9, // mov rcx, r13
+	0x41, 0xff, 0xe4, // jmp r12
+	0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, // int3
+};
+
+INLINE_X64 static alignas( 16 ) const uint8_t SwitchContextX64[] = {
+	0x48, 0x8d, 0x05, 0x3e, 0x01, 0x00, 0x00,             // lea rax, [.yield_target]
+	0x48, 0x89, 0x01,                                     // mov [rcx + 0 * 8], rax
+	0x48, 0x89, 0x61, 0x08,                               // mov [rcx + 1 * 8], rsp
+	0x48, 0x89, 0x69, 0x10,                               // mov [rcx + 2 * 8], rbp
+	0x48, 0x89, 0x59, 0x18,                               // mov [rcx + 3 * 8], rbx
+	0x4c, 0x89, 0x61, 0x20,                               // mov [rcx + 4 * 8], r12
+	0x4c, 0x89, 0x69, 0x28,                               // mov [rcx + 5 * 8], r13
+	0x4c, 0x89, 0x71, 0x30,                               // mov [rcx + 6 * 8], r14
+	0x4c, 0x89, 0x79, 0x38,                               // mov [rcx + 7 * 8], r15
+	0x48, 0x89, 0x79, 0x40,                               // mov [rcx + 8 * 8], rdi
+	0x48, 0x89, 0x71, 0x48,                               // mov [rcx + 9 * 8], rsi
+	0x0f, 0x29, 0x71, 0x50,                               // movaps [rcx + 10 * 8], xmm6
+	0x0f, 0x29, 0x79, 0x60,                               // movaps [rcx + 12 * 8], xmm7
+	0x44, 0x0f, 0x29, 0x41, 0x70,                         // movaps [rcx + 14 * 8], xmm8
+	0x44, 0x0f, 0x29, 0x89, 0x80, 0x00, 0x00, 0x00,       // movaps [rcx + 16 * 8], xmm9
+	0x44, 0x0f, 0x29, 0x91, 0x90, 0x00, 0x00, 0x00,       // movaps [rcx + 18 * 8], xmm10
+	0x44, 0x0f, 0x29, 0x99, 0xa0, 0x00, 0x00, 0x00,       // movaps [rcx + 20 * 8], xmm11
+	0x44, 0x0f, 0x29, 0xa1, 0xb0, 0x00, 0x00, 0x00,       // movaps [rcx + 22 * 8], xmm12
+	0x44, 0x0f, 0x29, 0xa9, 0xc0, 0x00, 0x00, 0x00,       // movaps [rcx + 24 * 8], xmm13
+	0x44, 0x0f, 0x29, 0xb1, 0xd0, 0x00, 0x00, 0x00,       // movaps [rcx + 26 * 8], xmm14
+	0x44, 0x0f, 0x29, 0xb9, 0xe0, 0x00, 0x00, 0x00,       // movaps [rcx + 28 * 8], xmm15
+	0x65, 0x4c, 0x8b, 0x14, 0x25, 0x30, 0x00, 0x00, 0x00, // mov r10, [gs:dword 0x30]
+	0x4d, 0x8b, 0x5a, 0x08,                               // mov r11, [r10 + 0x8]
+	0x4c, 0x89, 0x99, 0xf0, 0x00, 0x00, 0x00,             // mov [rcx + 30 * 8], r11
+	0x4d, 0x8b, 0x5a, 0x10,                               // mov r11, [r10 + 0x10]
+	0x4c, 0x89, 0x99, 0xf8, 0x00, 0x00, 0x00,             // mov [rcx + 31 * 8], r11
+	0x4d, 0x8b, 0x9a, 0x78, 0x14, 0x00, 0x00,             // mov r11, [r10 + 0x1478]
+	0x4c, 0x89, 0x99, 0x00, 0x01, 0x00, 0x00,             // mov [rcx + 32 * 8], r11
+	0x4d, 0x8b, 0x5a, 0x20,                               // mov r11, [r10 + 0x20]
+	0x4c, 0x89, 0x99, 0x08, 0x01, 0x00, 0x00,             // mov [rcx + 33 * 8], r11
+	0x4c, 0x8b, 0x9a, 0x08, 0x01, 0x00, 0x00,             // mov r11, [rdx + 33 * 8]
+	0x4d, 0x89, 0x5a, 0x20,                               // mov [r10 + 0x20], r11
+	0x4c, 0x8b, 0x9a, 0x00, 0x01, 0x00, 0x00,             // mov r11, [rdx + 32 * 8]
+	0x4d, 0x89, 0x9a, 0x78, 0x14, 0x00, 0x00,             // mov [r10 + 0x1478], r11
+	0x4c, 0x8b, 0x9a, 0xf8, 0x00, 0x00, 0x00,             // mov r11, [rdx + 31 * 8]
+	0x4d, 0x89, 0x5a, 0x10,                               // mov [r10 + 0x10], r11
+	0x4c, 0x8b, 0x9a, 0xf0, 0x00, 0x00, 0x00,             // mov r11, [rdx + 30 * 8]
+	0x4d, 0x89, 0x5a, 0x08,                               // mov [r10 + 0x8], r11
+	0x44, 0x0f, 0x28, 0xba, 0xe0, 0x00, 0x00, 0x00,       // movaps xmm15, [rdx + 28 * 8]
+	0x44, 0x0f, 0x28, 0xb2, 0xd0, 0x00, 0x00, 0x00,       // movaps xmm14, [rdx + 26 * 8]
+	0x44, 0x0f, 0x28, 0xaa, 0xc0, 0x00, 0x00, 0x00,       // movaps xmm13, [rdx + 24 * 8]
+	0x44, 0x0f, 0x28, 0xa2, 0xb0, 0x00, 0x00, 0x00,       // movaps xmm12, [rdx + 22 * 8]
+	0x44, 0x0f, 0x28, 0x9a, 0xa0, 0x00, 0x00, 0x00,       // movaps xmm11, [rdx + 20 * 8]
+	0x44, 0x0f, 0x28, 0x92, 0x90, 0x00, 0x00, 0x00,       // movaps xmm10, [rdx + 18 * 8]
+	0x44, 0x0f, 0x28, 0x8a, 0x80, 0x00, 0x00, 0x00,       // movaps xmm9,  [rdx + 16 * 8]
+	0x44, 0x0f, 0x28, 0x42, 0x70,                         // movaps xmm8,  [rdx + 14 * 8]
+	0x0f, 0x28, 0x7a, 0x60,                               // movaps xmm7,  [rdx + 12 * 8]
+	0x0f, 0x28, 0x72, 0x50,                               // movaps xmm6,  [rdx + 10 * 8]
+	0x48, 0x8b, 0x72, 0x48,                               // mov rsi, [rdx + 9 * 8]
+	0x48, 0x8b, 0x7a, 0x40,                               // mov rdi, [rdx + 8 * 8]
+	0x4c, 0x8b, 0x7a, 0x38,                               // mov r15, [rdx + 7 * 8]
+	0x4c, 0x8b, 0x72, 0x30,                               // mov r14, [rdx + 6 * 8]
+	0x4c, 0x8b, 0x6a, 0x28,                               // mov r13, [rdx + 5 * 8]
+	0x4c, 0x8b, 0x62, 0x20,                               // mov r12, [rdx + 4 * 8]
+	0x48, 0x8b, 0x5a, 0x18,                               // mov rbx, [rdx + 3 * 8]
+	0x48, 0x8b, 0x6a, 0x10,                               // mov rbp, [rdx + 2 * 8]
+	0x48, 0x8b, 0x62, 0x08,                               // mov rsp, [rdx + 1 * 8]
+	0xff, 0x22,                                           // jmp qword [rdx + 0 * 8]
+	0xc3,                                                 // .yield_target: ret
+	0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, // int3
+};
 
 void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
 	constexpr size_t kShadowStackSize = 32;
@@ -28,7 +97,7 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	char * char_stack = ( char * ) stack;
 
 	*fiber = {
-		.rip = ( void * ) FiberWrapper,
+		.rip = ( void * ) FiberWrapperX64,
 		// NOTE: Windows expects the stack to be aligned before `call`, which pushes a return
 		// address, so when switching into a fiber we need to misalign the stack by 8
 		.rsp = char_stack + stack_size - kShadowStackSize - sizeof( void * ),
@@ -45,7 +114,19 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	memcpy( fiber->rsp, &iced, sizeof( iced ) );
 }
 
-#else // !GGFIBER_PLATFORM_WINDOWS
+void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
+	using SwitchContextSignature = void ( * )( VolatileRegisters * from, const VolatileRegisters * to );
+	SwitchContextSignature f = ( SwitchContextSignature ) ( void * ) SwitchContextX64;
+	f( from, to );
+}
+
+#endif // GGFIBER_ARCHITECTURE_X86 && GGFIBER_PLATFORM_WINDOWS
+
+/*
+ * x64 non-Windows
+ */
+
+#if GGFIBER_ARCHITECTURE_X86 && !GGFIBER_PLATFORM_WINDOWS
 
 [[gnu::noreturn]] static void FiberWrapper() {
 	asm volatile( "movq %%r13, %%rdi" : : : "rdi" );
@@ -108,11 +189,13 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	);
 }
 
-#endif // !GGFIBER_PLATFORM_WINDOWS
+#endif // GGFIBER_ARCHITECTURE_X86 && !GGFIBER_PLATFORM_WINDOWS
 
-#endif // GGFIBER_ARCHITECTURE_X86
+/*
+ * arm64 non-Windows
+ */
 
-#if GGFIBER_ARCHITECTURE_ARM64
+#if GGFIBER_ARCHITECTURE_ARM64 && !GGFIBER_PLATFORM_WINDOWS
 
 [[gnu::noreturn]] static void FiberWrapper() {
 	asm volatile( "mov x0, x20" );
@@ -177,4 +260,4 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	asm volatile( "1:" );
 }
 
-#endif // GGFIBER_ARCHITECTURE_ARM64
+#endif // GGFIBER_ARCHITECTURE_ARM64 && !GGFIBER_PLATFORM_WINDOWS

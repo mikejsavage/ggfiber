@@ -1,0 +1,4 @@
+use64
+
+	mov rcx, r13
+	jmp r12

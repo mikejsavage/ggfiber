@@ -1,0 +1,64 @@
+use64
+
+	lea rax, [.yield_target]
+	mov [rcx + 0 * 8], rax
+	mov [rcx + 1 * 8], rsp
+	mov [rcx + 2 * 8], rbp
+	mov [rcx + 3 * 8], rbx
+	mov [rcx + 4 * 8], r12
+	mov [rcx + 5 * 8], r13
+	mov [rcx + 6 * 8], r14
+	mov [rcx + 7 * 8], r15
+	mov [rcx + 8 * 8], rdi
+	mov [rcx + 9 * 8], rsi
+	movaps [rcx + 10 * 8], xmm6
+	movaps [rcx + 12 * 8], xmm7
+	movaps [rcx + 14 * 8], xmm8
+	movaps [rcx + 16 * 8], xmm9
+	movaps [rcx + 18 * 8], xmm10
+	movaps [rcx + 20 * 8], xmm11
+	movaps [rcx + 22 * 8], xmm12
+	movaps [rcx + 24 * 8], xmm13
+	movaps [rcx + 26 * 8], xmm14
+	movaps [rcx + 28 * 8], xmm15
+	mov r10, [gs:dword 0x30]
+	mov r11, [r10 + 0x8]
+	mov [rcx + 30 * 8], r11
+	mov r11, [r10 + 0x10]
+	mov [rcx + 31 * 8], r11
+	mov r11, [r10 + 0x1478]
+	mov [rcx + 32 * 8], r11
+	mov r11, [r10 + 0x20]
+	mov [rcx + 33 * 8], r11
+
+	mov r11, [rdx + 33 * 8]
+	mov [r10 + 0x20], r11
+	mov r11, [rdx + 32 * 8]
+	mov [r10 + 0x1478], r11
+	mov r11, [rdx + 31 * 8]
+	mov [r10 + 0x10], r11
+	mov r11, [rdx + 30 * 8]
+	mov [r10 + 0x8], r11
+	movaps xmm15, [rdx + 28 * 8]
+	movaps xmm14, [rdx + 26 * 8]
+	movaps xmm13, [rdx + 24 * 8]
+	movaps xmm12, [rdx + 22 * 8]
+	movaps xmm11, [rdx + 20 * 8]
+	movaps xmm10, [rdx + 18 * 8]
+	movaps xmm9,  [rdx + 16 * 8]
+	movaps xmm8,  [rdx + 14 * 8]
+	movaps xmm7,  [rdx + 12 * 8]
+	movaps xmm6,  [rdx + 10 * 8]
+	mov rsi, [rdx + 9 * 8]
+	mov rdi, [rdx + 8 * 8]
+	mov r15, [rdx + 7 * 8]
+	mov r14, [rdx + 6 * 8]
+	mov r13, [rdx + 5 * 8]
+	mov r12, [rdx + 4 * 8]
+	mov rbx, [rdx + 3 * 8]
+	mov rbp, [rdx + 2 * 8]
+	mov rsp, [rdx + 1 * 8]
+	jmp qword [rdx + 0 * 8]
+
+.yield_target:
+	ret
