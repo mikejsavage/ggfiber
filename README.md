@@ -39,7 +39,7 @@ static void f( void * bye ) {
 int main() {
 	VolatileRegisters bye, hello;
 	// printf needs a surprising amount of stack space
-	alignas( 16 ) char stack[ 8 * 1024 ];
+	alignas( 16 ) char stack[ 16 * 1024 ];
 	MakeFiberContext( &hello, f, &bye, stack, sizeof( stack ) );
 	SwitchContext( &bye, &hello );
 	printf( "bye\n" );
