@@ -11,33 +11,37 @@ struct Coroutine {
 	alignas( 16 ) char stack[ STACK_SIZE ];
 
 	CoroutineCallback callback;
-	VolatileRegisters coroutine_context;
-	VolatileRegisters yield_context;
+	GGFiberContext coroutine_context;
+	GGFiberContext yield_context;
 };
 
 static void CoroutineWrapper( void * arg ) {
 	Coroutine * c = ( Coroutine * ) arg;
 	c->callback( c );
-	SwitchContext( &c->coroutine_context, &c->yield_context );
+	GGFiberSwapContext( &c->coroutine_context, &c->yield_context );
 	assert( false );
 }
 
 static void InitCoroutine( Coroutine * c, CoroutineCallback callback ) {
 	*c = { };
 	c->callback = callback;
-	MakeFiberContext( &c->coroutine_context, CoroutineWrapper, c, c->stack, sizeof( c->stack ) );
+	GGFiberMakeContext( &c->coroutine_context, CoroutineWrapper, c, c->stack, sizeof( c->stack ) );
 }
 
 static void ResumeCoroutine( Coroutine * c ) {
-	SwitchContext( &c->yield_context, &c->coroutine_context );
+	GGFiberSwapContext( &c->yield_context, &c->coroutine_context );
 }
 
 static void Yield( Coroutine * c ) {
-	SwitchContext( &c->coroutine_context, &c->yield_context );
+	GGFiberSwapContext( &c->coroutine_context, &c->yield_context );
 }
+
+#include <emmintrin.h>
 
 static void f( Coroutine * c ) {
 	float a = 1.0f;
+	__m128 x;
+	_mm_store_ps( ( float * ) &x, _mm_set1_ps( a ) );
 	printf( "yielding once, a = %f\n", a );
 	Yield( c );
 	a += 1.0f;

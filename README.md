@@ -9,13 +9,13 @@ stack memory buffers that you manage yourself.
 The API in its entirety is:
 
 ```cpp
-using FiberCallback = void ( * )( void * );
-struct VolatileRegisters;
+using GGFiberCallback = void ( * )( void * );
+struct GGFiberContext;
 
-void MakeFiberContext( VolatileRegisters * fiber,
-	FiberCallback callback, void * callback_arg,
+void GGFiberMakeContext( GGFiberContext * fiber,
+	GGFiberCallback callback, void * callback_arg,
 	void * stack, size_t stack_size );
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to );
+void GGFiberSwapContext( GGFiberContext * from, const GGFiberContext * to );
 ```
 
 As such ggfiber doesn't implement coroutines, but you can use ggfiber to implement them yourself in
@@ -32,16 +32,16 @@ ggfiber's implementation was heavily guided by [LuaCoco](https://coco.luajit.org
 
 static void f( void * bye ) {
 	printf( "hello\n" );
-	VolatileRegisters dummy;
-	SwitchContext( &dummy, ( VolatileRegisters * ) bye );
+	GGFiberContext dummy;
+	GGFiberSwapContext( &dummy, ( GGFiberContext * ) bye );
 }
 
 int main() {
-	VolatileRegisters bye, hello;
+	GGFiberContext bye, hello;
 	// printf needs a surprising amount of stack space
 	alignas( 16 ) char stack[ 16 * 1024 ];
-	MakeFiberContext( &hello, f, &bye, stack, sizeof( stack ) );
-	SwitchContext( &bye, &hello );
+	GGFiberMakeContext( &hello, f, &bye, stack, sizeof( stack ) );
+	GGFiberSwapContext( &bye, &hello );
 	printf( "bye\n" );
 	return 0;
 }

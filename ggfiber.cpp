@@ -1,3 +1,21 @@
+/*
+ * ggfiber v1.0
+ *
+ * Copyright (c) Michael Savage <mike@mikejsavage.co.uk>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -11,7 +29,7 @@ static_assert( sizeof( void * ) == 8, "64bit only" );
  * x64 Windows
  */
 
-#if GGFIBER_ARCHITECTURE_X86 && GGFIBER_PLATFORM_WINDOWS
+#if GGFIBER_ARCHITECTURE_X64 && GGFIBER_PLATFORM_WINDOWS
 
 #if defined( _MSC_VER )
 #  pragma section( ".text" )
@@ -89,7 +107,7 @@ alignas( 16 ) INLINE_X64 static const uint8_t SwitchContextX64[] = {
 	0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, // int3
 };
 
-void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
+void GGFiberMakeContext( GGFiberContext * fiber, GGFiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
 	constexpr size_t kShadowStackSize = 32;
 
 	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
@@ -114,19 +132,19 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	memcpy( fiber->rsp, &iced, sizeof( iced ) );
 }
 
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
-	using SwitchContextSignature = void ( * )( VolatileRegisters * from, const VolatileRegisters * to );
+void GGFiberSwapContext( GGFiberContext * from, const GGFiberContext * to ) {
+	using SwitchContextSignature = void ( * )( GGFiberContext * from, const GGFiberContext * to );
 	SwitchContextSignature f = ( SwitchContextSignature ) ( void * ) SwitchContextX64;
 	f( from, to );
 }
 
-#endif // GGFIBER_ARCHITECTURE_X86 && GGFIBER_PLATFORM_WINDOWS
+#endif // GGFIBER_ARCHITECTURE_X64 && GGFIBER_PLATFORM_WINDOWS
 
 /*
  * x64 non-Windows
  */
 
-#if GGFIBER_ARCHITECTURE_X86 && !GGFIBER_PLATFORM_WINDOWS
+#if GGFIBER_ARCHITECTURE_X64 && !GGFIBER_PLATFORM_WINDOWS
 
 [[gnu::noreturn]] static void FiberWrapper() {
 	asm volatile( "movq %%r13, %%rdi" : : : "rdi" );
@@ -134,7 +152,7 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	__builtin_unreachable();
 }
 
-void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
+void GGFiberMakeContext( GGFiberContext * fiber, GGFiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
 	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
 	assert( stack_size >= sizeof( void * ) );
 	char * char_stack = ( char * ) stack;
@@ -151,7 +169,7 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	memcpy( fiber->rsp, &iced, sizeof( iced ) );
 }
 
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
+void GGFiberSwapContext( GGFiberContext * from, const GGFiberContext * to ) {
 	// save current context to `from`
 	asm volatile(
 		"leaq 1f(%%rip), %%rax\n"
@@ -189,7 +207,7 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	);
 }
 
-#endif // GGFIBER_ARCHITECTURE_X86 && !GGFIBER_PLATFORM_WINDOWS
+#endif // GGFIBER_ARCHITECTURE_X64 && !GGFIBER_PLATFORM_WINDOWS
 
 /*
  * arm64 non-Windows
@@ -204,7 +222,7 @@ void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
 	__builtin_unreachable();
 }
 
-void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
+void GGFiberMakeContext( GGFiberContext * fiber, GGFiberCallback callback, void * callback_arg, void * stack, size_t stack_size ) {
 	assert( ( uintptr_t( stack ) + stack_size ) % 16 == 0 );
 	*fiber = {
 		.x19 = ( void * ) callback,
@@ -215,7 +233,7 @@ void MakeFiberContext( VolatileRegisters * fiber, FiberCallback callback, void *
 	};
 }
 
-void SwitchContext( VolatileRegisters * from, const VolatileRegisters * to ) {
+void GGFiberSwapContext( GGFiberContext * from, const GGFiberContext * to ) {
 	// save current context to `from`
 	asm volatile(
 		"adr x11, 1f\n"
